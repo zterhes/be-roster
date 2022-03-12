@@ -29,5 +29,7 @@ export class PlayerController {
   }
 
   @Put('updatePlayer')
-  updatePlayer(@Body(new ValidationPipe()) playerDTO: PlayerDTO) {}
+  updatePlayer(@Body(new ValidationPipe()) playerDTO: PlayerDTO) {
+    
+  }
 }
