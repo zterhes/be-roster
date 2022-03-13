@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsUUID, UUIDVersion } from 'class-validator';
+import { SwaggerMessages } from './player.enum';
+import { IsNotEmpty, IsUUID } from 'class-validator';
 import { Player } from './player.entity';
+
 
 export class PlayerCreateDTO {
   @ApiProperty({
@@ -28,10 +30,9 @@ export class PlayerNameAndIdDTO {
   }
 
   public static toPlayerNameAndIdConverter = (playerResultList: Player[]) => {
-    const result = playerResultList.map((player: Player) => {
+    return playerResultList.map((player: Player) => {
       return new PlayerNameAndIdDTO(player.id, player.name);
     });
-    return result;
   };
 }
 
