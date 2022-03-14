@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { GoogleDriveService } from 'src/google-drive/google-drive.service';
 import { UpdateResult } from 'typeorm';
 import { PlayerCreateDTO, PlayerDTO, PlayerNameAndIdDTO } from './player.dto';
 import { Player } from './player.entity';
@@ -11,6 +12,7 @@ export class PlayerService {
   constructor(
     @InjectRepository(PlayerRespository)
     private readonly playerRepository: PlayerRespository,
+    private googleDriveService : GoogleDriveService
   ) {}
 
   async getAllPlayers() {
@@ -22,6 +24,7 @@ export class PlayerService {
   }
 
   async getAllPlayerName() {
+    this.googleDriveService.upload()
     const playersList = await this.getAllPlayers();
     if (playersList.length === 0) {
       throw new PlayerError('There are no player entities in the database');
@@ -32,9 +35,10 @@ export class PlayerService {
   async createPlayer(createPlayerDTO: PlayerCreateDTO) {
     const newPlayer: Player = new Player();
     newPlayer.name = createPlayerDTO.name;
-    newPlayer.imgSrc = createPlayerDTO.imgSrc != null ? createPlayerDTO.imgSrc : "default";
+    newPlayer.imgSrc =
+      createPlayerDTO.imgSrc != null ? createPlayerDTO.imgSrc : 'default';
     const result: Player = await this.playerRepository.save(newPlayer);
-    console.log('result', result)
+    console.log('result', result);
     if (result === undefined) {
       throw new PlayerError('Saving is unsuccessful');
     }
