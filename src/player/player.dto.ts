@@ -52,5 +52,5 @@ export class PlayerDTO {
   @ApiProperty({
     description: SwaggerMessages.playerImgDescription,
   })
-  imgSrc: string;
+  imgID: string;
 }

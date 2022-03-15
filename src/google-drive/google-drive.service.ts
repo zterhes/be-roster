@@ -1,32 +1,41 @@
 import { Injectable } from '@nestjs/common';
 import * as fs from 'fs';
-import { drive_v3, google } from 'googleapis';
+import { google } from 'googleapis';
 import { GoogleAuth } from 'googleapis-common';
 import driveConfigService from 'src/config/googleDrive.config';
+import { Readable } from 'stream';
+import { DriveError } from './google-drive.error';
 
 @Injectable()
 export class GoogleDriveService {
-  async upload() {
+  async upload(id: string, file: Express.Multer.File) {
     const auth: GoogleAuth = driveConfigService();
     const driveService = google.drive({ version: 'v3', auth });
 
-    var folderId = '1Y-sr3w0P1yBUwr_kyK3vb2CX4ImoHx9l';
-    var fileMetadata = {
-      name: 'photo.jpg',
+    const stream: Readable = Readable.from(file.buffer);
+
+    const folderId: string = process.env.PLAYER_PHOTO_FOLDER_ID;
+    const fileMetadata = {
+      name: id,
       parents: [folderId],
     };
-    var media = {
+    const media = {
       mimeType: 'image/jpeg',
-      body: fs.createReadStream('src/google-drive/test.png'),
+      body: stream,
     };
 
     const create = {
       resource: fileMetadata,
       media: media,
       fields: 'id',
+    };
+    try {
+      const response = await driveService.files.create(create);
+      return response;
+    } catch (error) {
+      throw new DriveError(
+        'Photo upload unsuccessful error message: ' + error.message,
+      );
     }
-
-    let response = await driveService.files.create(create);
-    console.log('response', response)
   }
 }

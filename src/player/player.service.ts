@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { drive } from 'googleapis/build/src/apis/drive';
 import { GoogleDriveService } from 'src/google-drive/google-drive.service';
 import { UpdateResult } from 'typeorm';
 import { PlayerCreateDTO, PlayerDTO, PlayerNameAndIdDTO } from './player.dto';
@@ -12,7 +13,7 @@ export class PlayerService {
   constructor(
     @InjectRepository(PlayerRespository)
     private readonly playerRepository: PlayerRespository,
-    private googleDriveService : GoogleDriveService
+    private googleDriveService: GoogleDriveService,
   ) {}
 
   async getAllPlayers() {
@@ -24,7 +25,6 @@ export class PlayerService {
   }
 
   async getAllPlayerName() {
-    this.googleDriveService.upload()
     const playersList = await this.getAllPlayers();
     if (playersList.length === 0) {
       throw new PlayerError('There are no player entities in the database');
@@ -32,16 +32,36 @@ export class PlayerService {
     return PlayerNameAndIdDTO.toPlayerNameAndIdConverter(playersList);
   }
 
-  async createPlayer(createPlayerDTO: PlayerCreateDTO) {
+  async createPlayer(
+    createPlayerDTO: PlayerCreateDTO,
+    file: Express.Multer.File,
+  ) {
     const newPlayer: Player = new Player();
     newPlayer.name = createPlayerDTO.name;
-    newPlayer.imgSrc =
-      createPlayerDTO.imgSrc != null ? createPlayerDTO.imgSrc : 'default';
+    newPlayer.imgID = createPlayerDTO.imgSrc =
+      process.env.DEFAULT_PLAYER_IMG_PATH;
     const result: Player = await this.playerRepository.save(newPlayer);
-    console.log('result', result);
     if (result === undefined) {
       throw new PlayerError('Saving is unsuccessful');
     }
+    try {
+      const driveUploadResult = await this.googleDriveService.upload(
+        result.id,
+        file,
+      );
+      const playerDTO = new PlayerDTO();
+      playerDTO.id = result.id;
+      playerDTO.name = result.name;
+      playerDTO.imgID = driveUploadResult.data.id;
+      const updateResult = await this.updatePlayer(playerDTO);
+      if (updateResult.affected!=1){
+        throw new PlayerError("Error saving imgId to the database")
+      }
+    } catch (error) {
+      console.log('error', error.message);
+      throw new PlayerError(error.message);
+    }
+
     return result.id;
   }
 

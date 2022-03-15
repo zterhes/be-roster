@@ -9,5 +9,5 @@ export class Player {
   name: string;
 
   @Column()
-  imgSrc: string;
+  imgID: string;
 }

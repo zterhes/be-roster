@@ -6,8 +6,11 @@ import {
   HttpStatus,
   Post,
   Put,
+  UploadedFile,
+  UseInterceptors,
   ValidationPipe,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { UpdateResult } from 'typeorm';
 import { PlayerCreateDTO, PlayerDTO } from './player.dto';
 import { Player } from './player.entity';
@@ -19,10 +22,10 @@ export class PlayerController {
   constructor(private playerService: PlayerService) {}
 
   @Get()
-   async getAllPlayerData() {
+  async getAllPlayerData() {
     try {
-      const result:Player[] = await this.playerService.getAllPlayers();
-      return result
+      const result: Player[] = await this.playerService.getAllPlayers();
+      return result;
     } catch (error) {
       console.log('error', error);
       if (error instanceof PlayerError) {
@@ -41,11 +44,16 @@ export class PlayerController {
   }
 
   @Post()
+  @UseInterceptors(FileInterceptor('file'))
   async createPlayer(
     @Body(new ValidationPipe()) createPlayerDTO: PlayerCreateDTO,
+    @UploadedFile() file: Express.Multer.File,
   ) {
     try {
-      const result = await this.playerService.createPlayer(createPlayerDTO);
+      const result = await this.playerService.createPlayer(
+        createPlayerDTO,
+        file,
+      );
       return result;
     } catch (error) {
       if (error instanceof PlayerError) {
